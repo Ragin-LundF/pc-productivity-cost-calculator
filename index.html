@@ -89,6 +89,27 @@
     button { transition: all .15s; }
     .fade-in { animation: fade .28s ease; }
     @keyframes fade { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
+
+    @media print {
+      @page { margin: 12mm; }
+      body { background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      header { position: static !important; }
+      .no-print { display: none !important; }
+      .lift:hover { transform: none; box-shadow: none; }
+      .card { box-shadow: none; break-inside: avoid; }
+      main, header > div { max-width: none; }
+      /* stack sidebar above results — flex-row was squeezing results to zero width */
+      main > div { display: block !important; }
+      aside { width: 100% !important; margin-bottom: 1.5rem; }
+      aside .space-y-4 > * + * { margin-top: 1rem; }
+      .lg\:sticky { position: static !important; }
+      /* render inputs as flat read-outs, drop the slider/stepper chrome */
+      .slider, .stp { display: none !important; }
+      .stepper, .field { border-color: #e4e4eb; background: #fff; }
+      .stepper input { text-align: left; }
+      /* gradient-clipped headline price -> solid color (background-clip:text drops in print) */
+      .gradient-num { background: none !important; color: var(--solid, #1a1a22) !important; -webkit-text-fill-color: var(--solid, #1a1a22) !important; }
+    }
   </style>
 </head>
 <body class="text-[#1a1a22] min-h-screen">
@@ -105,6 +126,11 @@
         <h1 class="text-lg font-semibold tracking-tight">PC Investment Calculator</h1>
         <p class="text-[13px] text-[#8b8b96] -mt-0.5">The real cost of developer wait time, compared across machines</p>
       </div>
+      <button onclick="window.print()" class="no-print ml-auto flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-[#4f46e5] bg-indigo-50 hover:bg-indigo-100 border border-indigo-100">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 9V4h12v5M6 18H4a1 1 0 01-1-1v-5a1 1 0 011-1h16a1 1 0 011 1v5a1 1 0 01-1 1h-2M6 14h12v6H6v-6z"/></svg>
+        Export PDF
+      </button>
     </div>
   </header>
 
@@ -120,7 +146,7 @@
           </div>
           <div id="pcCards" class="space-y-4"></div>
           <button onclick="addPC()" id="addBtn"
-            class="w-full py-3 border border-dashed border-[#d4d4dd] rounded-2xl text-[#9a9aa3] font-medium text-sm
+            class="no-print w-full py-3 border border-dashed border-[#d4d4dd] rounded-2xl text-[#9a9aa3] font-medium text-sm
                    hover:border-indigo-400 hover:text-indigo-600 hover:bg-indigo-50/50 hover:shadow-sm flex items-center justify-center gap-2">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"/></svg>
@@ -343,7 +369,7 @@ function renderPerfCards() {
         <span class="font-semibold text-sm">${escHtml(pc.name)}</span>
       </div>
       <div class="flex items-end gap-1.5 mb-4">
-        <span class="num text-[28px] font-bold leading-none" style="background:linear-gradient(135deg,${c.g1},${c.g2});-webkit-background-clip:text;background-clip:text;color:transparent">${eur(d.totalPerYear)}</span>
+        <span class="num gradient-num text-[28px] font-bold leading-none" style="--solid:${c.g2};background:linear-gradient(135deg,${c.g1},${c.g2});-webkit-background-clip:text;background-clip:text;color:transparent">${eur(d.totalPerYear)}</span>
         <span class="text-xs text-[#a8a8b2] mb-0.5">/ year</span>
       </div>
       <div class="space-y-2 text-[13px]">
