@@ -182,7 +182,7 @@
 
         <section class="card p-6">
           <h2 class="text-[15px] font-semibold tracking-tight mb-1">Cumulative cost over time</h2>
-          <p class="text-xs text-[#a8a8b2] mb-5">Lower is better. Steps mark hardware replacements.</p>
+          <p class="text-xs text-[#a8a8b2] mb-5">Lower is better. Hardware cost is amortized over its replacement cycle.</p>
           <canvas id="costChart"></canvas>
         </section>
       </div>
@@ -230,7 +230,7 @@ function calcPC(pc, s) {
 function calcYears(pc, s, years) {
   const d = calcPC(pc, s);
   const prodCost = d.prodCostPerYear * years;
-  const hwCost   = Math.ceil(years / pc.replaceYears) * pc.cost;
+  const hwCost   = d.hwCostPerYear * years; // amortized — consistent with the per-year cards, reacts to replaceYears
   return { prodCost, hwCost, total: prodCost + hwCost };
 }
 function breakeven(refPc, pc, s) {
