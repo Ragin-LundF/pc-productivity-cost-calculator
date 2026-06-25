@@ -6,253 +6,283 @@
   <title>PC Investment Calculator</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = { theme: { extend: { fontFamily: {
+      sans: ['Inter', 'system-ui', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] } } } };
+  </script>
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-    .transition-all { transition: all 0.2s ease; }
-    input:focus { outline: none; }
-    .gradient-header {
-      background: linear-gradient(135deg, #1e3a8a 0%, #3730a3 50%, #4f46e5 100%);
+    :root { color-scheme: light; }
+    body {
+      font-family: 'Inter', system-ui, sans-serif; -webkit-font-smoothing: antialiased;
+      background:
+        radial-gradient(900px 500px at 0% -5%, #ececfb 0, transparent 55%),
+        radial-gradient(800px 500px at 100% -10%, #f3eafb 0, transparent 50%),
+        #f6f6f9;
+      background-attachment: fixed;
     }
-    .glass-card {
-      background: rgba(255,255,255,0.95);
-      backdrop-filter: blur(10px);
+    .num { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+    .eyebrow { font-size: 0.68rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+    .lbl { font-size: 0.7rem; font-weight: 500; color: #8b8b96; margin-bottom: 0.4rem; display: block; }
+
+    .card {
+      background: #fff; border: 1px solid #ededf2; border-radius: 16px;
+      box-shadow: 0 1px 2px rgba(17,24,39,.04), 0 2px 10px rgba(17,24,39,.045);
     }
-    .savings-positive { color: #059669; }
-    .savings-negative { color: #dc2626; }
-    .best-value {
-      background: linear-gradient(135deg, #ecfdf5, #d1fae5);
-      border-color: #34d399;
+    .lift { transition: transform .2s ease, box-shadow .2s ease; }
+    .lift:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(17,24,39,.10); }
+
+    /* text field */
+    .field {
+      width: 100%; border: 1px solid #e4e4eb; border-radius: 10px;
+      padding: 0.5rem 0.75rem; font-size: 0.875rem; background: #fafafb;
+      transition: border-color .15s, box-shadow .15s, background .15s;
     }
-    .pc-card {
-      transition: box-shadow 0.2s, transform 0.2s;
+    .field:focus { outline: none; background: #fff; border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,.12); }
+
+    /* stepper */
+    .stepper {
+      display: flex; align-items: stretch; border: 1px solid #e4e4eb; border-radius: 10px;
+      background: #fafafb; overflow: hidden; transition: border-color .15s, box-shadow .15s, background .15s;
     }
-    .pc-card:hover {
-      box-shadow: 0 8px 30px rgba(0,0,0,0.1);
-      transform: translateY(-1px);
+    .stepper:focus-within { background: #fff; border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,.12); }
+    .stepper input {
+      flex: 1; min-width: 0; border: none; background: transparent; text-align: center;
+      padding: 0.5rem 0.25rem; font-size: 0.875rem; color: #2a2a33;
     }
-    .shimmer {
-      background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-      background-size: 200% 100%;
+    .stepper input:focus { outline: none; }
+    .stp {
+      width: 34px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+      color: #9a9aa3; font-size: 17px; line-height: 1; cursor: pointer; user-select: none;
+      transition: background .12s, color .12s, transform .08s;
     }
-    @keyframes pulse-green {
-      0%, 100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.4); }
-      50% { box-shadow: 0 0 0 6px rgba(52, 211, 153, 0); }
+    .stp:hover { background: #f0f0f7; color: #4f46e5; }
+    .stp:active { transform: scale(.85); }
+    input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    input[type=number] { -moz-appearance: textfield; }
+
+    /* slider */
+    .slider {
+      -webkit-appearance: none; appearance: none; width: 100%; height: 5px; border-radius: 99px;
+      background: #e8e8ee; cursor: pointer; margin: 6px 0 10px;
     }
-    .pulse-green { animation: pulse-green 2s ease-in-out infinite; }
+    .slider::-webkit-slider-thumb {
+      -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%;
+      background: #fff; border: 3px solid var(--accent, #6366f1);
+      box-shadow: 0 1px 4px rgba(17,24,39,.25); transition: transform .12s;
+    }
+    .slider::-webkit-slider-thumb:hover { transform: scale(1.18); }
+    .slider::-moz-range-thumb {
+      width: 14px; height: 14px; border-radius: 50%; background: #fff;
+      border: 3px solid var(--accent, #6366f1); box-shadow: 0 1px 4px rgba(17,24,39,.25);
+    }
+    .slider::-moz-range-progress { background: var(--accent, #6366f1); height: 5px; border-radius: 99px; }
+
     table th, table td { white-space: nowrap; }
-    ::-webkit-scrollbar { height: 4px; width: 4px; }
-    ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 2px; }
-    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 2px; }
+    tbody tr { border-top: 1px solid #f2f2f5; }
+    .row-hover { transition: background .12s; }
+    .row-hover:hover { background: #fafaff; }
+    ::-webkit-scrollbar { height: 6px; width: 6px; }
+    ::-webkit-scrollbar-thumb { background: #d8d8e0; border-radius: 3px; }
+    button { transition: all .15s; }
+    .fade-in { animation: fade .28s ease; }
+    @keyframes fade { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
   </style>
 </head>
-<body class="bg-slate-50 min-h-screen">
+<body class="text-[#1a1a22] min-h-screen">
 
   <!-- Header -->
-  <header class="gradient-header text-white py-8 px-6 shadow-2xl">
-    <div class="max-w-7xl mx-auto flex items-center gap-4">
-      <div class="bg-white/20 rounded-2xl p-3">
-        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-            d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/>
+  <header class="bg-white/80 backdrop-blur-md border-b border-[#ededf2] sticky top-0 z-20">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex items-center gap-3.5">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-300/40">
+        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+          <rect x="3" y="4" width="18" height="12" rx="2"/><path stroke-linecap="round" d="M8 20h8M12 16v4"/>
         </svg>
       </div>
       <div>
-        <h1 class="text-3xl font-bold tracking-tight">PC Investment Calculator</h1>
-        <p class="text-indigo-200 mt-0.5 text-sm">Calculate the true cost of developer productivity across different PC configurations</p>
+        <h1 class="text-lg font-semibold tracking-tight">PC Investment Calculator</h1>
+        <p class="text-[13px] text-[#8b8b96] -mt-0.5">The real cost of developer wait time, compared across machines</p>
       </div>
     </div>
   </header>
 
-  <main class="max-w-7xl mx-auto px-4 py-8">
-    <div class="flex flex-col lg:flex-row gap-6">
+  <main class="max-w-7xl mx-auto px-6 py-8">
+    <div class="flex flex-col lg:flex-row gap-7">
 
       <!-- ── Config Panel ── -->
-      <aside class="lg:w-80 xl:w-96 flex-shrink-0">
-        <div class="lg:sticky lg:top-6 space-y-4">
-
-          <!-- Developer Settings -->
-          <div class="glass-card rounded-2xl shadow-sm border border-gray-100 p-5">
-            <div class="flex items-center gap-2 mb-4">
-              <div class="w-6 h-6 bg-indigo-100 rounded-lg flex items-center justify-center">
-                <svg class="w-3.5 h-3.5 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/>
-                </svg>
-              </div>
-              <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wider">Developer Settings</h2>
-            </div>
-
-            <div class="space-y-3">
-              <div>
-                <label class="text-xs font-medium text-gray-500 mb-1.5 block">Hourly Rate (€/hr)</label>
-                <div class="relative">
-                  <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">€</span>
-                  <input type="number" id="hourlyRate" value="48" min="1" step="1"
-                    class="w-full border border-gray-200 rounded-xl pl-7 pr-3 py-2 text-sm bg-gray-50 focus:bg-white focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all">
-                </div>
-              </div>
-              <div>
-                <label class="text-xs font-medium text-gray-500 mb-1.5 block">Working Days per Year</label>
-                <input type="number" id="workingDays" value="220" min="1" max="365"
-                  class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm bg-gray-50 focus:bg-white focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all">
-              </div>
-              <div>
-                <label class="text-xs font-medium text-gray-500 mb-1.5 block">Working Hours per Day</label>
-                <input type="number" id="hoursPerDay" value="8" min="1" max="16" step="0.5"
-                  class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm bg-gray-50 focus:bg-white focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all">
-              </div>
-              <div>
-                <label class="text-xs font-medium text-gray-500 mb-1.5 block">Compile+Test Cycles per Day
-                  <span class="ml-1 text-gray-400 font-normal">(avg)</span>
-                </label>
-                <input type="number" id="cyclesPerDay" value="10" min="1" max="200"
-                  class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm bg-gray-50 focus:bg-white focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all">
-              </div>
-            </div>
+      <aside class="lg:w-[340px] flex-shrink-0">
+        <div class="lg:sticky lg:top-24 space-y-4">
+          <div class="card p-5">
+            <h2 class="eyebrow text-[#9a9aa3] mb-4">Developer Profile</h2>
+            <div id="settings" class="space-y-3.5"></div>
           </div>
-
-          <!-- PC Cards -->
           <div id="pcCards" class="space-y-4"></div>
-
-          <!-- Add PC Button -->
-          <button onclick="addPC()"
-            class="w-full py-3 border-2 border-dashed border-indigo-200 rounded-2xl text-indigo-400 font-medium text-sm
-                   hover:border-indigo-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all flex items-center justify-center gap-2">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-            </svg>
-            Add PC Configuration
+          <button onclick="addPC()" id="addBtn"
+            class="w-full py-3 border border-dashed border-[#d4d4dd] rounded-2xl text-[#9a9aa3] font-medium text-sm
+                   hover:border-indigo-400 hover:text-indigo-600 hover:bg-indigo-50/50 hover:shadow-sm flex items-center justify-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"/></svg>
+            Add machine
           </button>
-
         </div>
       </aside>
 
       <!-- ── Results Panel ── -->
-      <div class="flex-1 min-w-0 space-y-6">
-
-        <!-- Performance Summary Cards -->
-        <div id="perfCards" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
-
-        <!-- Key Insights -->
+      <div class="flex-1 min-w-0 space-y-7">
         <div id="insights" class="grid grid-cols-1 sm:grid-cols-3 gap-4"></div>
 
-        <!-- Total Cost of Ownership Table -->
-        <div class="glass-card rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-          <div class="px-6 py-4 border-b border-gray-100 flex items-center gap-2">
-            <div class="w-6 h-6 bg-blue-100 rounded-lg flex items-center justify-center">
-              <svg class="w-3.5 h-3.5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M5 4a3 3 0 00-3 3v6a3 3 0 003 3h10a3 3 0 003-3V7a3 3 0 00-3-3H5zm-1 9v-1h5v2H5a1 1 0 01-1-1zm7 1h4a1 1 0 001-1v-1h-5v2zm0-4h5V8h-5v2zM9 8H4v2h5V8z"/>
-              </svg>
-            </div>
-            <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wider">Total Cost of Ownership</h2>
-            <span class="ml-auto text-xs text-gray-400">Productivity + Hardware</span>
-          </div>
-          <div class="overflow-x-auto">
-            <table id="tcoTable" class="w-full text-sm"></table>
-          </div>
-        </div>
+        <section>
+          <h2 class="eyebrow text-[#9a9aa3] mb-3 px-1">Per machine — yearly breakdown</h2>
+          <div id="perfCards" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
+        </section>
 
-        <!-- Savings Table -->
-        <div class="glass-card rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-          <div class="px-6 py-4 border-b border-gray-100 flex items-center gap-2">
-            <div class="w-6 h-6 bg-emerald-100 rounded-lg flex items-center justify-center">
-              <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
-              </svg>
-            </div>
-            <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wider">Savings vs Reference</h2>
-            <span id="refLabel" class="ml-auto text-xs text-gray-400"></span>
+        <section class="card overflow-hidden">
+          <div class="px-6 pt-5 pb-4 flex items-baseline gap-2">
+            <h2 class="text-[15px] font-semibold tracking-tight">Total cost of ownership</h2>
+            <span class="text-xs text-[#a8a8b2]">productivity loss + hardware</span>
           </div>
-          <div class="overflow-x-auto">
-            <table id="savingsTable" class="w-full text-sm"></table>
-          </div>
-        </div>
+          <div class="overflow-x-auto"><table id="tcoTable" class="w-full text-sm"></table></div>
+        </section>
 
-        <!-- Chart -->
-        <div class="glass-card rounded-2xl shadow-sm border border-gray-100 p-6">
-          <div class="flex items-center gap-2 mb-5">
-            <div class="w-6 h-6 bg-violet-100 rounded-lg flex items-center justify-center">
-              <svg class="w-3.5 h-3.5 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/>
-              </svg>
-            </div>
-            <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wider">Cumulative Total Cost Over Time</h2>
+        <section class="card overflow-hidden">
+          <div class="px-6 pt-5 pb-4 flex items-baseline gap-2">
+            <h2 class="text-[15px] font-semibold tracking-tight">Savings vs reference</h2>
+            <span id="refLabel" class="text-xs text-[#a8a8b2]"></span>
           </div>
+          <div class="overflow-x-auto"><table id="savingsTable" class="w-full text-sm"></table></div>
+        </section>
+
+        <section class="card p-6">
+          <h2 class="text-[15px] font-semibold tracking-tight mb-1">Cumulative cost over time</h2>
+          <p class="text-xs text-[#a8a8b2] mb-5">Lower is better. Steps mark hardware replacements.</p>
           <canvas id="costChart"></canvas>
-        </div>
-
+        </section>
       </div>
     </div>
   </main>
 
-  <footer class="max-w-7xl mx-auto px-4 py-6 text-center text-xs text-gray-400">
-    <p>All calculations are estimates based on average values. Productivity cost = (compile + test time) × cycles/day × working days × hourly rate.</p>
+  <footer class="max-w-7xl mx-auto px-6 py-8 text-center text-xs text-[#b0b0ba]">
+    Estimates only · productivity cost = (compile + test) × cycles/day × working days × hourly rate
   </footer>
 
 <script>
 // ─── State ─────────────────────────────────────────────────────────────────
 const COLORS = [
-  { dot: '#6366f1', bg: 'bg-indigo-500', light: 'bg-indigo-50',  text: 'text-indigo-600',  border: 'border-indigo-200',  ring: 'ring-indigo-200',  hex: '#6366f1', hexLight: '#e0e7ff' },
-  { dot: '#10b981', bg: 'bg-emerald-500', light: 'bg-emerald-50', text: 'text-emerald-600', border: 'border-emerald-200', ring: 'ring-emerald-200', hex: '#10b981', hexLight: '#d1fae5' },
-  { dot: '#f59e0b', bg: 'bg-amber-500',   light: 'bg-amber-50',   text: 'text-amber-600',   border: 'border-amber-200',   ring: 'ring-amber-200',   hex: '#f59e0b', hexLight: '#fef3c7' },
-  { dot: '#ef4444', bg: 'bg-red-500',     light: 'bg-red-50',     text: 'text-red-600',     border: 'border-red-200',     ring: 'ring-red-200',     hex: '#ef4444', hexLight: '#fee2e2' },
-  { dot: '#8b5cf6', bg: 'bg-violet-500',  light: 'bg-violet-50',  text: 'text-violet-600',  border: 'border-violet-200',  ring: 'ring-violet-200',  hex: '#8b5cf6', hexLight: '#ede9fe' },
+  { dot: '#6366f1', text: 'text-indigo-600',  soft: '#eef0ff', hex: '#6366f1', g1: '#818cf8', g2: '#4f46e5' },
+  { dot: '#10b981', text: 'text-emerald-600', soft: '#e7f9f1', hex: '#10b981', g1: '#34d399', g2: '#059669' },
+  { dot: '#f59e0b', text: 'text-amber-600',   soft: '#fef5e7', hex: '#f59e0b', g1: '#fbbf24', g2: '#d97706' },
+  { dot: '#ec4899', text: 'text-pink-600',    soft: '#fdeaf4', hex: '#ec4899', g1: '#f472b6', g2: '#db2777' },
+  { dot: '#8b5cf6', text: 'text-violet-600',  soft: '#f1ecfe', hex: '#8b5cf6', g1: '#a78bfa', g2: '#7c3aed' },
 ];
 
 let nextId = 3;
 let pcs = [
-  { id: 1, name: 'Windows Notebook', compileMin: 2,   testMin: 5,   cost: 1200, replaceYears: 3 },
-  { id: 2, name: 'MacBook Pro',       compileMin: 0.8, testMin: 3,   cost: 2900, replaceYears: 4 },
+  { id: 1, name: 'Windows Notebook', compileMin: 2,   testMin: 5, cost: 1200, replaceYears: 3 },
+  { id: 2, name: 'MacBook Pro',       compileMin: 0.8, testMin: 3, cost: 2900, replaceYears: 4 },
 ];
-
 const TIMEFRAMES = [1, 2, 3, 5, 10];
 let chartInst = null;
 
-// ─── Helpers ───────────────────────────────────────────────────────────────
+// ─── Calc (unchanged from Excel logic) ──────────────────────────────────────
 const $ = id => document.getElementById(id);
 const getNum = id => parseFloat($(id).value) || 0;
 
 function settings() {
-  return {
-    hourlyRate:  getNum('hourlyRate'),
-    workingDays: getNum('workingDays'),
-    hoursPerDay: getNum('hoursPerDay'),
-    cyclesPerDay: getNum('cyclesPerDay'),
-  };
+  return { hourlyRate: getNum('hourlyRate'), workingDays: getNum('workingDays'),
+           hoursPerDay: getNum('hoursPerDay'), cyclesPerDay: getNum('cyclesPerDay') };
 }
-
 function calcPC(pc, s) {
-  const waitPerCycleMin = pc.compileMin + pc.testMin;
-  const waitPerDayMin   = waitPerCycleMin * s.cyclesPerDay;
-  const waitPerDayHrs   = waitPerDayMin / 60;
-  const waitPerYear     = waitPerDayHrs * s.workingDays;
+  const waitPerDayMin = (pc.compileMin + pc.testMin) * s.cyclesPerDay;
+  const waitPerYear   = (waitPerDayMin / 60) * s.workingDays;
   const prodCostPerYear = waitPerYear * s.hourlyRate;
   const hwCostPerYear   = pc.cost / pc.replaceYears;
-  const waitPct         = (waitPerDayMin / (s.hoursPerDay * 60)) * 100;
-  return { waitPerDayMin, waitPerDayHrs, waitPerYear, prodCostPerYear, hwCostPerYear, totalPerYear: prodCostPerYear + hwCostPerYear, waitPct };
+  const waitPct = (waitPerDayMin / (s.hoursPerDay * 60)) * 100;
+  return { waitPerDayMin, waitPerYear, prodCostPerYear, hwCostPerYear, totalPerYear: prodCostPerYear + hwCostPerYear, waitPct };
 }
-
 function calcYears(pc, s, years) {
   const d = calcPC(pc, s);
   const prodCost = d.prodCostPerYear * years;
   const hwCost   = Math.ceil(years / pc.replaceYears) * pc.cost;
   return { prodCost, hwCost, total: prodCost + hwCost };
 }
-
 function breakeven(refPc, pc, s) {
-  for (let y = 1; y <= 30; y++) {
-    const refTotal = calcYears(refPc, s, y).total;
-    const thisTotal = calcYears(pc, s, y).total;
-    if (thisTotal < refTotal) return y;
-  }
+  for (let y = 1; y <= 30; y++) if (calcYears(pc, s, y).total < calcYears(refPc, s, y).total) return y;
   return null;
 }
-
 const eur = n => '€' + Math.round(n).toLocaleString('de-DE');
-const hrs = n => n.toFixed(1) + 'h';
+const hrs = n => n.toFixed(0) + ' h';
 const pct = n => n.toFixed(1) + '%';
 
-// ─── Render PC Config Cards ─────────────────────────────────────────────────
+// ─── Control builder (stepper + optional slider) ────────────────────────────
+function numCtrl(value, o) {
+  const { min, max, step, slider, accent = '#6366f1', id = '', oninput = '' } = o;
+  const sl = slider
+    ? `<input type="range" class="slider" min="${min}" max="${max}" step="${step}" value="${value}" style="--accent:${accent}">`
+    : '';
+  const idAttr = id ? `id="${id}"` : '';
+  const oin = oninput ? `oninput="${oninput}"` : '';
+  return `<div class="ctrl">${sl}
+    <div class="stepper">
+      <span class="stp" role="button" aria-label="decrease" tabindex="-1"
+        onmousedown="holdStart(this,-1)" onmouseup="holdStop()" onmouseleave="holdStop()"
+        ontouchstart="holdStart(this,-1);event.preventDefault()" ontouchend="holdStop()">−</span>
+      <input type="number" ${idAttr} value="${value}" min="${min}" max="${max}" step="${step}" ${oin}>
+      <span class="stp" role="button" aria-label="increase" tabindex="-1"
+        onmousedown="holdStart(this,1)" onmouseup="holdStop()" onmouseleave="holdStop()"
+        ontouchstart="holdStart(this,1);event.preventDefault()" ontouchend="holdStop()">+</span>
+    </div></div>`;
+}
+
+let holdT, holdI;
+function step(btn, dir) {
+  const input = btn.parentElement.querySelector('input[type=number]');
+  const stp = parseFloat(input.step) || 1;
+  const min = input.min !== '' ? +input.min : -Infinity;
+  const max = input.max !== '' ? +input.max : Infinity;
+  let v = (parseFloat(input.value) || 0) + dir * stp;
+  v = Math.max(min, Math.min(max, Math.round(v / stp) * stp));
+  input.value = parseFloat(v.toFixed(4));
+  input.dispatchEvent(new Event('input', { bubbles: true }));
+}
+function holdStart(btn, dir) { step(btn, dir); holdT = setTimeout(() => { holdI = setInterval(() => step(btn, dir), 70); }, 350); }
+function holdStop() { clearTimeout(holdT); clearInterval(holdI); }
+
+function updateSliderFill(r) {
+  const p = ((+r.value - +r.min) / (+r.max - +r.min)) * 100;
+  r.style.background = `linear-gradient(90deg, var(--accent) ${p}%, #e8e8ee ${p}%)`;
+}
+function refreshSliders() { document.querySelectorAll('.slider').forEach(updateSliderFill); }
+
+// keep slider <-> number in sync; recalc fires via the number's own oninput
+document.addEventListener('input', e => {
+  const t = e.target;
+  if (t.type === 'range' && t.classList.contains('slider')) {
+    const n = t.closest('.ctrl').querySelector('input[type=number]');
+    if (n) { n.value = t.value; n.dispatchEvent(new Event('input', { bubbles: true })); }
+    updateSliderFill(t);
+  } else if (t.type === 'number') {
+    const r = t.closest('.ctrl')?.querySelector('input[type=range]');
+    if (r) { r.value = t.value; updateSliderFill(r); }
+  }
+});
+
+// ─── Developer settings ─────────────────────────────────────────────────────
+function renderSettings() {
+  const s0 = settings.defaults || { hourlyRate: 48, workingDays: 220, hoursPerDay: 8, cyclesPerDay: 10 };
+  $('settings').innerHTML = `
+    <div><label class="lbl">Hourly rate (€)</label>
+      ${numCtrl(48, { id: 'hourlyRate', min: 0, max: 150, step: 1, slider: true, oninput: 'renderResults()' })}</div>
+    <div><label class="lbl">Working days / year</label>
+      ${numCtrl(220, { id: 'workingDays', min: 1, max: 365, step: 5, slider: false, oninput: 'renderResults()' })}</div>
+    <div><label class="lbl">Working hours / day</label>
+      ${numCtrl(8, { id: 'hoursPerDay', min: 1, max: 16, step: 0.5, slider: true, oninput: 'renderResults()' })}</div>
+    <div><label class="lbl">Compile + test cycles / day <span class="text-[#b4b4bd] font-normal">avg</span></label>
+      ${numCtrl(10, { id: 'cyclesPerDay', min: 1, max: 50, step: 1, slider: true, oninput: 'renderResults()' })}</div>`;
+}
+
+// ─── PC config cards ────────────────────────────────────────────────────────
 function renderPCCards() {
   const wrap = $('pcCards');
   wrap.innerHTML = '';
@@ -260,356 +290,222 @@ function renderPCCards() {
     const c = COLORS[i % COLORS.length];
     const isRef = i === 0;
     const div = document.createElement('div');
-    div.className = `pc-card glass-card rounded-2xl shadow-sm border-2 ${c.border} p-5`;
+    div.className = 'card p-5 fade-in';
+    div.style.borderTop = `3px solid ${c.dot}`;
     div.innerHTML = `
       <div class="flex items-center justify-between mb-4">
         <div class="flex items-center gap-2.5">
-          <div class="w-3 h-3 rounded-full shadow-sm" style="background:${c.dot}"></div>
-          <span class="font-semibold text-gray-700 text-sm">PC ${i + 1}</span>
-          ${isRef ? '<span class="text-xs bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded-full font-medium">Reference</span>' : ''}
+          <span class="w-2.5 h-2.5 rounded-full" style="background:${c.dot};box-shadow:0 0 0 3px ${c.soft}"></span>
+          <span class="js-name font-semibold text-sm">${escHtml(pc.name) || 'Machine ' + (i + 1)}</span>
+          ${isRef ? '<span class="text-[10px] font-semibold uppercase tracking-wide bg-[#f0f0f5] text-[#9a9aa3] px-2 py-0.5 rounded-md">Reference</span>' : ''}
         </div>
         ${pcs.length > 2
-          ? `<button onclick="removePC(${pc.id})" title="Remove"
-               class="w-6 h-6 rounded-full flex items-center justify-center text-gray-300 hover:text-red-400 hover:bg-red-50 transition-all text-lg leading-none">×</button>`
-          : ''}
+          ? `<button onclick="removePC(${pc.id})" aria-label="Remove machine"
+               class="w-6 h-6 rounded-lg flex items-center justify-center text-[#c4c4cd] hover:text-red-500 hover:bg-red-50 text-lg leading-none">×</button>` : ''}
       </div>
-
       <div class="space-y-3">
-        <div>
-          <label class="text-xs font-medium text-gray-500 mb-1 block">Name</label>
-          <input type="text" value="${escHtml(pc.name)}"
-            oninput="updateField(${pc.id},'name',this.value)"
-            class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm bg-gray-50 focus:bg-white focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all">
+        <div><label class="lbl">Name</label>
+          <input type="text" value="${escHtml(pc.name)}" oninput="updateField(${pc.id},'name',this.value)" class="field"></div>
+        <div><label class="lbl">Compile time (min)</label>
+          ${numCtrl(pc.compileMin, { min: 0, max: 15, step: 0.1, slider: true, accent: c.hex, oninput: `updateField(${pc.id},'compileMin',parseFloat(this.value)||0)` })}</div>
+        <div><label class="lbl">Test time (min)</label>
+          ${numCtrl(pc.testMin, { min: 0, max: 30, step: 0.5, slider: true, accent: c.hex, oninput: `updateField(${pc.id},'testMin',parseFloat(this.value)||0)` })}</div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="lbl">Price (€)</label>
+            ${numCtrl(pc.cost, { min: 0, max: 99999, step: 100, slider: false, oninput: `updateField(${pc.id},'cost',parseFloat(this.value)||0)` })}</div>
+          <div><label class="lbl">Replace (yrs)</label>
+            ${numCtrl(pc.replaceYears, { min: 1, max: 20, step: 1, slider: false, oninput: `updateField(${pc.id},'replaceYears',parseInt(this.value)||1)` })}</div>
         </div>
-        <div class="grid grid-cols-2 gap-2">
-          <div>
-            <label class="text-xs font-medium text-gray-500 mb-1 block">Compile (min)</label>
-            <input type="number" value="${pc.compileMin}" step="0.1" min="0"
-              oninput="updateField(${pc.id},'compileMin',parseFloat(this.value)||0)"
-              class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm bg-gray-50 focus:bg-white focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all">
-          </div>
-          <div>
-            <label class="text-xs font-medium text-gray-500 mb-1 block">Test (min)</label>
-            <input type="number" value="${pc.testMin}" step="0.1" min="0"
-              oninput="updateField(${pc.id},'testMin',parseFloat(this.value)||0)"
-              class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm bg-gray-50 focus:bg-white focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all">
-          </div>
-        </div>
-        <div class="grid grid-cols-2 gap-2">
-          <div>
-            <label class="text-xs font-medium text-gray-500 mb-1 block">PC Cost (€)</label>
-            <input type="number" value="${pc.cost}" step="100" min="0"
-              oninput="updateField(${pc.id},'cost',parseFloat(this.value)||0)"
-              class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm bg-gray-50 focus:bg-white focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all">
-          </div>
-          <div>
-            <label class="text-xs font-medium text-gray-500 mb-1 block">Replace after</label>
-            <div class="relative">
-              <input type="number" value="${pc.replaceYears}" min="1" max="20"
-                oninput="updateField(${pc.id},'replaceYears',parseInt(this.value)||1)"
-                class="w-full border border-gray-200 rounded-xl pl-3 pr-10 py-2 text-sm bg-gray-50 focus:bg-white focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all">
-              <span class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">yrs</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
+      </div>`;
     wrap.appendChild(div);
   });
+  $('addBtn').style.display = pcs.length >= COLORS.length ? 'none' : '';
 }
 
-// ─── Render Performance Summary Cards ──────────────────────────────────────
+// ─── Performance cards ──────────────────────────────────────────────────────
 function renderPerfCards() {
   const s = settings();
   const wrap = $('perfCards');
   wrap.innerHTML = '';
+  const minTotal = Math.min(...pcs.map(pc => calcPC(pc, s).totalPerYear));
   pcs.forEach((pc, i) => {
     const c = COLORS[i % COLORS.length];
     const d = calcPC(pc, s);
-    const pctClamped = Math.min(100, d.waitPct);
+    const isBest = Math.abs(d.totalPerYear - minTotal) < 1;
     const div = document.createElement('div');
-    div.className = `rounded-2xl p-5 border-2 ${c.border} ${c.light}`;
+    div.className = 'card lift p-5 relative overflow-hidden';
+    if (isBest) div.style.borderColor = c.dot + '66';
     div.innerHTML = `
-      <div class="flex items-center gap-2.5 mb-4">
-        <div class="w-3 h-3 rounded-full" style="background:${c.dot}"></div>
-        <span class="font-bold text-sm ${c.text}">${escHtml(pc.name)}</span>
+      <div class="absolute inset-x-0 top-0 h-1" style="background:linear-gradient(90deg,${c.g1},${c.g2})"></div>
+      ${isBest ? `<span class="absolute top-4 right-4 text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-md" style="background:${c.soft};color:${c.dot}">Lowest</span>` : ''}
+      <div class="flex items-center gap-2.5 mb-3.5 mt-1">
+        <span class="w-2.5 h-2.5 rounded-full" style="background:${c.dot};box-shadow:0 0 0 3px ${c.soft}"></span>
+        <span class="font-semibold text-sm">${escHtml(pc.name)}</span>
       </div>
-      <div class="space-y-2.5">
-        <div class="flex justify-between items-baseline">
-          <span class="text-xs text-gray-500">Wait per cycle</span>
-          <span class="text-sm font-semibold text-gray-800">${(pc.compileMin + pc.testMin).toFixed(1)} min</span>
-        </div>
-        <div class="flex justify-between items-baseline">
-          <span class="text-xs text-gray-500">Wait per day</span>
-          <span class="text-sm font-semibold text-gray-800">${d.waitPerDayMin.toFixed(1)} min</span>
-        </div>
-        <div class="flex justify-between items-baseline">
-          <span class="text-xs text-gray-500">Wait per year</span>
-          <span class="text-sm font-semibold text-gray-800">${hrs(d.waitPerYear)}</span>
-        </div>
-        <div class="flex justify-between items-baseline">
-          <span class="text-xs text-gray-500">Productivity cost / yr</span>
-          <span class="text-sm font-semibold text-gray-800">${eur(d.prodCostPerYear)}</span>
-        </div>
-        <div class="flex justify-between items-baseline">
-          <span class="text-xs text-gray-500">Hardware cost / yr</span>
-          <span class="text-sm font-semibold text-gray-800">${eur(d.hwCostPerYear)}</span>
-        </div>
-        <div class="border-t border-white/60 pt-2.5 flex justify-between items-baseline">
-          <span class="text-xs font-semibold text-gray-600">Total cost / yr</span>
-          <span class="text-base font-bold ${c.text}">${eur(d.totalPerYear)}</span>
-        </div>
+      <div class="flex items-end gap-1.5 mb-4">
+        <span class="num text-[28px] font-bold leading-none" style="background:linear-gradient(135deg,${c.g1},${c.g2});-webkit-background-clip:text;background-clip:text;color:transparent">${eur(d.totalPerYear)}</span>
+        <span class="text-xs text-[#a8a8b2] mb-0.5">/ year</span>
       </div>
-      <div class="mt-3.5">
-        <div class="flex justify-between text-xs text-gray-400 mb-1">
-          <span>Wait time share</span>
-          <span>${pct(d.waitPct)} of working day</span>
-        </div>
-        <div class="h-2 bg-white/60 rounded-full overflow-hidden">
-          <div class="h-2 rounded-full transition-all" style="width:${pctClamped}%;background:${c.dot}"></div>
-        </div>
+      <div class="space-y-2 text-[13px]">
+        ${perfRow('Wait per day', d.waitPerDayMin.toFixed(0) + ' min')}
+        ${perfRow('Wait per year', hrs(d.waitPerYear))}
+        ${perfRow('Productivity loss', eur(d.prodCostPerYear) + ' / yr')}
+        ${perfRow('Hardware', eur(d.hwCostPerYear) + ' / yr')}
       </div>
-    `;
+      <div class="mt-4">
+        <div class="flex justify-between text-[11px] text-[#a8a8b2] mb-1.5">
+          <span>Wait share of working day</span><span class="num">${pct(d.waitPct)}</span></div>
+        <div class="h-2 bg-[#f0f0f5] rounded-full overflow-hidden">
+          <div class="h-full rounded-full transition-all duration-300" style="width:${Math.min(100, d.waitPct)}%;background:linear-gradient(90deg,${c.g1},${c.g2});box-shadow:0 1px 4px ${c.dot}55"></div>
+        </div>
+      </div>`;
     wrap.appendChild(div);
   });
 }
+function perfRow(label, val) {
+  return `<div class="flex justify-between items-baseline">
+    <span class="text-[#9a9aa3]">${label}</span>
+    <span class="num font-medium text-[#3a3a44]">${val}</span></div>`;
+}
 
-// ─── Render Key Insights ───────────────────────────────────────────────────
+// ─── Insights ───────────────────────────────────────────────────────────────
 function renderInsights() {
   if (pcs.length < 2) { $('insights').innerHTML = ''; return; }
   const s = settings();
-  const ref = pcs[0];
-  const refData = calcPC(ref, s);
-
-  // Find cheapest over 5 years
-  const costs5 = pcs.map(pc => ({ pc, c: calcYears(pc, s, 5).total }));
-  costs5.sort((a, b) => a.c - b.c);
-  const best5 = costs5[0];
-
-  // Savings per year (ref vs best non-ref)
+  const ref = pcs[0], refData = calcPC(ref, s);
+  const best5 = pcs.map(pc => ({ pc, c: calcYears(pc, s, 5).total })).sort((a, b) => a.c - b.c)[0];
   const savingPerYear = refData.prodCostPerYear - calcPC(best5.pc, s).prodCostPerYear;
-  const bestColor = COLORS[pcs.indexOf(best5.pc) % COLORS.length];
-
-  // Breakeven for best non-ref
-  const nonRef = pcs.filter((_, i) => i > 0);
+  const nonRef = pcs.slice(1);
   const beYears = breakeven(ref, nonRef[0], s);
-
-  const wrap = $('insights');
-  wrap.innerHTML = `
-    <div class="bg-white rounded-2xl border-2 border-emerald-200 p-4 shadow-sm">
-      <div class="text-xs text-gray-400 font-medium mb-1 uppercase tracking-wider">Best over 5 years</div>
-      <div class="text-lg font-bold text-emerald-600">${escHtml(best5.pc.name)}</div>
-      <div class="text-sm text-gray-500 mt-0.5">Total: ${eur(best5.c)}</div>
-    </div>
-    <div class="bg-white rounded-2xl border-2 border-indigo-200 p-4 shadow-sm">
-      <div class="text-xs text-gray-400 font-medium mb-1 uppercase tracking-wider">Productivity saving / yr</div>
-      <div class="text-lg font-bold ${savingPerYear > 0 ? 'text-emerald-600' : 'text-red-500'}">
-        ${savingPerYear >= 0 ? '+' : ''}${eur(savingPerYear)}
-      </div>
-      <div class="text-sm text-gray-500 mt-0.5">vs ${escHtml(ref.name)}</div>
-    </div>
-    <div class="bg-white rounded-2xl border-2 border-amber-200 p-4 shadow-sm">
-      <div class="text-xs text-gray-400 font-medium mb-1 uppercase tracking-wider">Breakeven point</div>
-      <div class="text-lg font-bold text-amber-600">
-        ${beYears ? 'Year ' + beYears : 'Never'}
-      </div>
-      <div class="text-sm text-gray-500 mt-0.5">${escHtml(nonRef[0].name)} vs ${escHtml(ref.name)}</div>
-    </div>
-  `;
+  $('insights').innerHTML =
+    insightCard(COLORS[1], 'Best over 5 years', escHtml(best5.pc.name), 'Total ' + eur(best5.c)) +
+    insightCard(COLORS[0], 'Productivity saved / yr', (savingPerYear >= 0 ? '+' : '') + eur(savingPerYear), 'vs ' + escHtml(ref.name), savingPerYear < 0) +
+    insightCard(COLORS[2], 'Breakeven', beYears ? 'Year ' + beYears : 'Never', escHtml(nonRef[0].name) + ' vs ' + escHtml(ref.name));
+}
+function insightCard(c, eyebrow, big, sub, negative) {
+  return `<div class="card lift fade-in p-5 relative overflow-hidden" style="background:linear-gradient(135deg,#fff 60%,${c.soft})">
+    <div class="absolute left-0 top-0 bottom-0 w-1" style="background:linear-gradient(${c.g1},${c.g2})"></div>
+    <div class="flex items-center gap-2 mb-2.5">
+      <span class="w-1.5 h-1.5 rounded-full" style="background:${c.dot}"></span>
+      <span class="eyebrow text-[#a8a8b2]">${eyebrow}</span></div>
+    <div class="num text-xl font-bold ${negative ? 'text-red-500' : ''}" ${negative ? '' : `style="color:${c.dot}"`}>${big}</div>
+    <div class="text-[13px] text-[#9a9aa3] mt-1">${sub}</div></div>`;
 }
 
-// ─── Render TCO Table ──────────────────────────────────────────────────────
+// ─── Tables ─────────────────────────────────────────────────────────────────
 function renderTCOTable() {
   const s = settings();
-  const table = $('tcoTable');
-
-  let h = `<thead><tr class="border-b-2 border-gray-100">`;
-  h += `<th class="text-left py-3 px-5 text-xs font-semibold text-gray-400 uppercase tracking-wider">Timeframe</th>`;
-  pcs.forEach((pc, i) => {
-    const c = COLORS[i % COLORS.length];
-    h += `<th class="text-right py-3 px-5 text-xs font-semibold uppercase tracking-wider ${c.text}">${escHtml(pc.name)}</th>`;
-  });
+  let h = `<thead><tr><th class="text-left py-3 px-6 eyebrow text-[#a8a8b2] bg-[#fafafb]">Timeframe</th>`;
+  pcs.forEach((pc, i) => h += `<th class="text-right py-3 px-6 eyebrow ${COLORS[i % COLORS.length].text} bg-[#fafafb]">${escHtml(pc.name)}</th>`);
   h += `</tr></thead><tbody>`;
-
-  TIMEFRAMES.forEach((years, ti) => {
+  TIMEFRAMES.forEach(years => {
     const costs = pcs.map(pc => calcYears(pc, s, years));
     const minTotal = Math.min(...costs.map(c => c.total));
-
-    h += `<tr class="${ti % 2 === 0 ? 'bg-gray-50/60' : 'bg-white'} hover:bg-indigo-50/30 transition-colors">`;
-    h += `<td class="py-3 px-5 font-bold text-gray-700">${years} Year${years > 1 ? 's' : ''}</td>`;
-    costs.forEach((c, i) => {
+    h += `<tr class="row-hover"><td class="py-3.5 px-6 font-semibold text-[#3a3a44]">${years} yr${years > 1 ? 's' : ''}</td>`;
+    costs.forEach(c => {
       const isBest = Math.abs(c.total - minTotal) < 1;
-      h += `<td class="py-3 px-5 text-right">
-        <div class="font-bold ${isBest ? 'text-emerald-600' : 'text-gray-700'} text-sm">
-          ${isBest ? '✓ ' : ''}${eur(c.total)}
-        </div>
-        <div class="text-xs text-gray-400 mt-0.5">${eur(c.prodCost)} + ${eur(c.hwCost)}</div>
-      </td>`;
+      h += `<td class="py-3.5 px-6 text-right">
+        <div class="num font-semibold text-sm ${isBest ? 'text-emerald-600' : 'text-[#3a3a44]'}">${isBest ? '↓ ' : ''}${eur(c.total)}</div>
+        <div class="num text-[11px] text-[#b0b0ba] mt-0.5">${eur(c.prodCost)} + ${eur(c.hwCost)}</div></td>`;
     });
     h += `</tr>`;
   });
-
-  h += `</tbody>`;
-  table.innerHTML = h;
+  $('tcoTable').innerHTML = h + '</tbody>';
 }
-
-// ─── Render Savings Table ──────────────────────────────────────────────────
 function renderSavingsTable() {
   const s = settings();
   const ref = pcs[0];
-  $('refLabel').textContent = `Reference: ${ref.name}`;
-
-  if (pcs.length < 2) {
-    $('savingsTable').innerHTML = '<tr><td class="px-5 py-4 text-sm text-gray-400">Add another PC to see comparisons.</td></tr>';
-    return;
-  }
-
+  $('refLabel').textContent = '· baseline ' + ref.name;
+  if (pcs.length < 2) { $('savingsTable').innerHTML = '<tbody><tr><td class="px-6 py-5 text-sm text-[#a8a8b2]">Add another machine to compare.</td></tr></tbody>'; return; }
   const others = pcs.slice(1);
-  const table = $('savingsTable');
-
-  let h = `<thead><tr class="border-b-2 border-gray-100">`;
-  h += `<th class="text-left py-3 px-5 text-xs font-semibold text-gray-400 uppercase tracking-wider">Timeframe</th>`;
-  others.forEach((pc, i) => {
-    const c = COLORS[(i + 1) % COLORS.length];
-    h += `<th class="text-right py-3 px-5 text-xs font-semibold uppercase tracking-wider ${c.text}">${escHtml(pc.name)}</th>`;
-  });
+  let h = `<thead><tr><th class="text-left py-3 px-6 eyebrow text-[#a8a8b2] bg-[#fafafb]">Timeframe</th>`;
+  others.forEach((pc, i) => h += `<th class="text-right py-3 px-6 eyebrow ${COLORS[(i + 1) % COLORS.length].text} bg-[#fafafb]">${escHtml(pc.name)}</th>`);
   h += `</tr></thead><tbody>`;
-
-  TIMEFRAMES.forEach((years, ti) => {
+  TIMEFRAMES.forEach(years => {
     const refCost = calcYears(ref, s, years).total;
-    h += `<tr class="${ti % 2 === 0 ? 'bg-gray-50/60' : 'bg-white'} hover:bg-indigo-50/30 transition-colors">`;
-    h += `<td class="py-3 px-5 font-bold text-gray-700">${years} Year${years > 1 ? 's' : ''}</td>`;
+    h += `<tr class="row-hover"><td class="py-3.5 px-6 font-semibold text-[#3a3a44]">${years} yr${years > 1 ? 's' : ''}</td>`;
     others.forEach(pc => {
       const diff = refCost - calcYears(pc, s, years).total;
       const pos = diff > 0;
-      h += `<td class="py-3 px-5 text-right">
-        <div class="font-bold text-sm ${pos ? 'text-emerald-600' : 'text-red-500'}">
-          ${pos ? '+' : ''}${eur(diff)}
-        </div>
-        <div class="text-xs ${pos ? 'text-emerald-400' : 'text-red-300'} mt-0.5">
-          ${pos ? 'saved' : 'more expensive'}
-        </div>
-      </td>`;
+      h += `<td class="py-3.5 px-6 text-right">
+        <div class="num font-semibold text-sm ${pos ? 'text-emerald-600' : 'text-red-500'}">${pos ? '+' : ''}${eur(diff)}</div>
+        <div class="text-[11px] mt-0.5 ${pos ? 'text-emerald-500/70' : 'text-red-400/70'}">${pos ? 'cheaper' : 'pricier'}</div></td>`;
     });
     h += `</tr>`;
   });
-
-  h += `</tbody>`;
-  table.innerHTML = h;
+  $('savingsTable').innerHTML = h + '</tbody>';
 }
 
-// ─── Render Chart ──────────────────────────────────────────────────────────
+// ─── Chart ──────────────────────────────────────────────────────────────────
 function renderChart() {
   const s = settings();
   const maxYears = 10;
-  const labels = Array.from({ length: maxYears }, (_, i) => `Year ${i + 1}`);
-
+  const labels = Array.from({ length: maxYears }, (_, i) => 'Y' + (i + 1));
   const datasets = pcs.map((pc, i) => {
     const c = COLORS[i % COLORS.length];
     return {
       label: pc.name,
       data: labels.map((_, yi) => calcYears(pc, s, yi + 1).total),
-      borderColor: c.hex,
-      backgroundColor: c.hexLight + '80',
-      borderWidth: 2.5,
-      pointBackgroundColor: c.hex,
-      pointRadius: 4,
-      pointHoverRadius: 6,
-      tension: 0.15,
-      fill: false,
+      borderColor: c.hex, backgroundColor: c.hex, borderWidth: 2.5,
+      pointRadius: 3.5, pointHoverRadius: 6,
+      pointBackgroundColor: '#fff', pointBorderColor: c.hex, pointBorderWidth: 2,
+      pointHoverBackgroundColor: c.hex, pointHoverBorderColor: '#fff',
+      tension: 0.12,
     };
   });
-
   if (chartInst) chartInst.destroy();
   chartInst = new Chart($('costChart').getContext('2d'), {
-    type: 'line',
-    data: { labels, datasets },
+    type: 'line', data: { labels, datasets },
     options: {
-      responsive: true,
+      responsive: true, maintainAspectRatio: true, aspectRatio: 2.3,
       interaction: { mode: 'index', intersect: false },
       plugins: {
-        legend: {
-          position: 'top',
-          labels: {
-            usePointStyle: true,
-            pointStyle: 'circle',
-            padding: 20,
-            font: { size: 12, family: '-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif' },
-          }
-        },
-        tooltip: {
-          backgroundColor: '#1e293b',
-          padding: 12,
-          cornerRadius: 10,
-          titleFont: { size: 12 },
-          bodyFont: { size: 12 },
-          callbacks: {
-            label: ctx => ` ${ctx.dataset.label}: ${eur(ctx.parsed.y)}`
-          }
-        }
+        legend: { position: 'top', align: 'end',
+          labels: { usePointStyle: true, pointStyle: 'circle', boxWidth: 7, boxHeight: 7, padding: 18,
+            font: { size: 12, family: 'Inter', weight: '500' }, color: '#6b6b76' } },
+        tooltip: { backgroundColor: '#1a1a22', padding: 12, cornerRadius: 10, usePointStyle: true, boxPadding: 5,
+          titleFont: { size: 11, family: 'Inter', weight: '600' }, bodyFont: { size: 12, family: 'JetBrains Mono' },
+          callbacks: { label: ctx => '  ' + ctx.dataset.label + ': ' + eur(ctx.parsed.y) } }
       },
       scales: {
-        x: {
-          grid: { color: '#f1f5f9', drawBorder: false },
-          ticks: { font: { size: 11 }, color: '#94a3b8' },
-        },
-        y: {
-          grid: { color: '#f1f5f9', drawBorder: false },
-          ticks: {
-            font: { size: 11 },
-            color: '#94a3b8',
-            callback: v => v >= 1000 ? '€' + (v / 1000).toFixed(0) + 'k' : '€' + v,
-          }
-        }
+        x: { grid: { display: false }, border: { display: false },
+          ticks: { font: { size: 11, family: 'JetBrains Mono' }, color: '#b0b0ba' } },
+        y: { grid: { color: '#f2f2f5' }, border: { display: false },
+          ticks: { font: { size: 11, family: 'JetBrains Mono' }, color: '#b0b0ba',
+            callback: v => v >= 1000 ? '€' + (v / 1000).toFixed(0) + 'k' : '€' + v } }
       }
     }
   });
 }
 
-// ─── Actions ───────────────────────────────────────────────────────────────
+// ─── Actions ────────────────────────────────────────────────────────────────
 function addPC() {
   if (pcs.length >= COLORS.length) return;
-  pcs.push({ id: nextId++, name: `PC ${pcs.length + 1}`, compileMin: 1.5, testMin: 4, cost: 2000, replaceYears: 3 });
+  pcs.push({ id: nextId++, name: 'Machine ' + (pcs.length + 1), compileMin: 1.5, testMin: 4, cost: 2000, replaceYears: 3 });
   renderAll();
 }
-
 function removePC(id) {
   if (pcs.length <= 2) return;
   pcs = pcs.filter(p => p.id !== id);
   renderAll();
 }
-
+let nameDebounce;
 function updateField(id, field, value) {
   const pc = pcs.find(p => p.id === id);
   if (!pc) return;
   pc[field] = value;
-  // Update display name in perf cards without full re-render of config panel
   renderResults();
+  if (field === 'name') { clearTimeout(nameDebounce); nameDebounce = setTimeout(refreshNames, 400); }
+}
+function refreshNames() {
+  document.querySelectorAll('#pcCards .js-name').forEach((el, i) => { if (pcs[i]) el.textContent = pcs[i].name || 'Machine ' + (i + 1); });
 }
 
-function renderAll() {
-  renderPCCards();
-  renderResults();
-}
+function renderAll() { renderPCCards(); renderResults(); refreshSliders(); }
+function renderResults() { renderPerfCards(); renderInsights(); renderTCOTable(); renderSavingsTable(); renderChart(); }
+function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
-function renderResults() {
-  renderPerfCards();
-  renderInsights();
-  renderTCOTable();
-  renderSavingsTable();
-  renderChart();
-}
-
-function escHtml(s) {
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-// ─── Settings listeners ────────────────────────────────────────────────────
-['hourlyRate','workingDays','hoursPerDay','cyclesPerDay'].forEach(id => {
-  $(id).addEventListener('input', renderResults);
-});
-
-// ─── Init ──────────────────────────────────────────────────────────────────
+renderSettings();
 renderAll();
 </script>
 </body>

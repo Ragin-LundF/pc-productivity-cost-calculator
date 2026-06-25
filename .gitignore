@@ -1,0 +1,18 @@
+# IDEs
+.idea/*
+*.iws
+*.iml
+*.ipr
+!.idea/inspectionProfiles
+!.idea/inspectionProfiles/*
+!.idea/detekt.xml
+!.run/
+.vscode/*
+
+# Other
+logs/*
+/.gradle/
+/build/
+.settings
+.classpath
+.project
