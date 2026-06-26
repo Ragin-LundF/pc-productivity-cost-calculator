@@ -203,10 +203,11 @@ const COLORS = [
   { dot: '#8b5cf6', text: 'text-violet-600',  soft: '#f1ecfe', hex: '#8b5cf6', g1: '#a78bfa', g2: '#7c3aed' },
 ];
 
-let nextId = 3;
+let nextId = 4;
 let pcs = [
-  { id: 1, name: 'Windows Notebook', compileMin: 2,   testMin: 5, cost: 1200, replaceYears: 3 },
-  { id: 2, name: 'MacBook Pro M3',   compileMin: 0.8, testMin: 3, cost: 2900, replaceYears: 4 },
+  { id: 1, name: 'Lenovo L15 (Windows, AMD Ryzen 7 Pro 4750U)', compileMin: 1.25,   testMin: 2.39, cost: 530, replaceYears: 3 },
+  { id: 2, name: 'Lenovo ThinkPad X1 Carbon',   compileMin: 0.8, testMin: 0.25, cost: 5500, replaceYears: 3 },
+  { id: 3, name: 'MacBook Pro M5 Max',   compileMin: 0.8, testMin: 0.25, cost: 5500, replaceYears: 4 },
 ];
 const TIMEFRAMES = [1, 2, 3, 5, 10];
 let chartInst = null;
@@ -296,7 +297,7 @@ document.addEventListener('input', e => {
 
 // ─── Developer settings ─────────────────────────────────────────────────────
 function renderSettings() {
-  const s0 = settings.defaults || { hourlyRate: 48, workingDays: 220, hoursPerDay: 8, cyclesPerDay: 10 };
+  const s0 = settings.defaults || { hourlyRate: 48, workingDays: 220, hoursPerDay: 8, cyclesPerDay: 20 };
   $('settings').innerHTML = `
     <div><label class="lbl">Hourly rate (€)</label>
       ${numCtrl(48, { id: 'hourlyRate', min: 0, max: 150, step: 1, slider: true, oninput: 'renderResults()' })}</div>
@@ -305,7 +306,7 @@ function renderSettings() {
     <div><label class="lbl">Working hours / day</label>
       ${numCtrl(8, { id: 'hoursPerDay', min: 1, max: 16, step: 0.5, slider: true, oninput: 'renderResults()' })}</div>
     <div><label class="lbl">Compile + test cycles / day <span class="text-[#b4b4bd] font-normal">avg</span></label>
-      ${numCtrl(10, { id: 'cyclesPerDay', min: 1, max: 50, step: 1, slider: true, oninput: 'renderResults()' })}</div>`;
+      ${numCtrl(20, { id: 'cyclesPerDay', min: 1, max: 50, step: 1, slider: true, oninput: 'renderResults()' })}</div>`;
 }
 
 // ─── PC config cards ────────────────────────────────────────────────────────
