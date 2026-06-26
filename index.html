@@ -126,7 +126,12 @@
         <h1 class="text-lg font-semibold tracking-tight">PC Investment Calculator</h1>
         <p class="text-[13px] text-[#8b8b96] -mt-0.5">The real cost of developer wait time, compared across machines</p>
       </div>
-      <button onclick="window.print()" class="no-print ml-auto flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-[#4f46e5] bg-indigo-50 hover:bg-indigo-100 border border-indigo-100">
+      <button onclick="copyLink(this)" class="no-print ml-auto flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-[#4f46e5] bg-indigo-50 hover:bg-indigo-100 border border-indigo-100">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 10.5L21 3m0 0h-5.25M21 3v5.25M10.5 6H6a3 3 0 00-3 3v9a3 3 0 003 3h9a3 3 0 003-3v-4.5"/></svg>
+        <span class="lbl-txt">Copy link</span>
+      </button>
+      <button onclick="window.print()" class="no-print flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-[#4f46e5] bg-indigo-50 hover:bg-indigo-100 border border-indigo-100">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" d="M6 9V4h12v5M6 18H4a1 1 0 01-1-1v-5a1 1 0 011-1h16a1 1 0 011 1v5a1 1 0 01-1 1h-2M6 14h12v6H6v-6z"/></svg>
         Export PDF
@@ -203,22 +208,35 @@ const COLORS = [
   { dot: '#8b5cf6', text: 'text-violet-600',  soft: '#f1ecfe', hex: '#8b5cf6', g1: '#a78bfa', g2: '#7c3aed' },
 ];
 
-let nextId = 4;
-let pcs = [
-  { id: 1, name: 'Lenovo L15 (Windows, AMD Ryzen 7 Pro 4750U)', compileMin: 1.25,   testMin: 2.39, cost: 530, replaceYears: 3 },
-  { id: 2, name: 'Lenovo ThinkPad X1 Carbon',   compileMin: 0.8, testMin: 0.25, cost: 5500, replaceYears: 3 },
-  { id: 3, name: 'MacBook Pro M5 Max',   compileMin: 0.8, testMin: 0.25, cost: 5500, replaceYears: 4 },
+// ─── CONFIG — edit defaults & ranges here ───────────────────────────────────
+const SETTINGS = [
+  { key: 'hourlyRate',   label: 'Hourly rate (€)',             def: 48,  min: 0, max: 150, step: 1,   slider: true  },
+  { key: 'workingDays',  label: 'Working days / year',         def: 220, min: 1, max: 365, step: 5,   slider: false },
+  { key: 'hoursPerDay',  label: 'Working hours / day',         def: 8,   min: 1, max: 16,  step: 0.5, slider: true  },
+  { key: 'cyclesPerDay', label: 'Compile + test cycles / day', def: 20,  min: 1, max: 50,  step: 1,   slider: true, hint: 'avg' },
+];
+const PC_FIELDS = [ // numeric per-machine fields (name handled separately)
+  { key: 'compileMin',   label: 'Compile time (min)', min: 0, max: 15,    step: 0.1, slider: true,  int: false },
+  { key: 'testMin',      label: 'Test time (min)',    min: 0, max: 30,    step: 0.5, slider: true,  int: false },
+  { key: 'cost',         label: 'Price (€)',          min: 0, max: 99999, step: 100, slider: false, int: false },
+  { key: 'replaceYears', label: 'Replace (yrs)',      min: 1, max: 20,    step: 1,   slider: false, int: true  },
+];
+const DEFAULT_PCS = [
+  { name: 'ThinkPad L15 (Windows, AMD Ryzen 7 Pro 4750U)',   compileMin: 1.25, testMin: 2.39, cost: 530,  replaceYears: 3 },
+  { name: 'ThinkPad E16 (Windows, Intel Core Ultra 7 255H)', compileMin: 1.9,  testMin: 2.03, cost: 1100, replaceYears: 3 },
+  { name: 'MacBook Pro M5 Max',                              compileMin: 0.8,  testMin: 0.25, cost: 5500, replaceYears: 4 },
 ];
 const TIMEFRAMES = [1, 2, 3, 5, 10];
-let chartInst = null;
+
+// ─── State (seeded from URL or defaults at bottom) ──────────────────────────
+let pcs = [], nextId = 1, chartInst = null;
 
 // ─── Calc (unchanged from Excel logic) ──────────────────────────────────────
 const $ = id => document.getElementById(id);
 const getNum = id => parseFloat($(id).value) || 0;
 
 function settings() {
-  return { hourlyRate: getNum('hourlyRate'), workingDays: getNum('workingDays'),
-           hoursPerDay: getNum('hoursPerDay'), cyclesPerDay: getNum('cyclesPerDay') };
+  return Object.fromEntries(SETTINGS.map(s => [s.key, getNum(s.key)]));
 }
 function calcPC(pc, s) {
   const waitPerDayMin = (pc.compileMin + pc.testMin) * s.cyclesPerDay;
@@ -296,17 +314,12 @@ document.addEventListener('input', e => {
 });
 
 // ─── Developer settings ─────────────────────────────────────────────────────
-function renderSettings() {
-  const s0 = settings.defaults || { hourlyRate: 48, workingDays: 220, hoursPerDay: 8, cyclesPerDay: 20 };
-  $('settings').innerHTML = `
-    <div><label class="lbl">Hourly rate (€)</label>
-      ${numCtrl(48, { id: 'hourlyRate', min: 0, max: 150, step: 1, slider: true, oninput: 'renderResults()' })}</div>
-    <div><label class="lbl">Working days / year</label>
-      ${numCtrl(220, { id: 'workingDays', min: 1, max: 365, step: 5, slider: false, oninput: 'renderResults()' })}</div>
-    <div><label class="lbl">Working hours / day</label>
-      ${numCtrl(8, { id: 'hoursPerDay', min: 1, max: 16, step: 0.5, slider: true, oninput: 'renderResults()' })}</div>
-    <div><label class="lbl">Compile + test cycles / day <span class="text-[#b4b4bd] font-normal">avg</span></label>
-      ${numCtrl(20, { id: 'cyclesPerDay', min: 1, max: 50, step: 1, slider: true, oninput: 'renderResults()' })}</div>`;
+function renderSettings(values) {
+  $('settings').innerHTML = SETTINGS.map(s => {
+    const hint = s.hint ? ` <span class="text-[#b4b4bd] font-normal">${s.hint}</span>` : '';
+    return `<div><label class="lbl">${s.label}${hint}</label>
+      ${numCtrl(values[s.key], { id: s.key, min: s.min, max: s.max, step: s.step, slider: s.slider, oninput: 'renderResults()' })}</div>`;
+  }).join('');
 }
 
 // ─── PC config cards ────────────────────────────────────────────────────────
@@ -333,20 +346,23 @@ function renderPCCards() {
       <div class="space-y-3">
         <div><label class="lbl">Name</label>
           <input type="text" value="${escHtml(pc.name)}" oninput="updateField(${pc.id},'name',this.value)" class="field"></div>
-        <div><label class="lbl">Compile time (min)</label>
-          ${numCtrl(pc.compileMin, { min: 0, max: 15, step: 0.1, slider: true, accent: c.hex, oninput: `updateField(${pc.id},'compileMin',parseFloat(this.value)||0)` })}</div>
-        <div><label class="lbl">Test time (min)</label>
-          ${numCtrl(pc.testMin, { min: 0, max: 30, step: 0.5, slider: true, accent: c.hex, oninput: `updateField(${pc.id},'testMin',parseFloat(this.value)||0)` })}</div>
+        ${pcField(pc, c, PC_FIELDS[0])}
+        ${pcField(pc, c, PC_FIELDS[1])}
         <div class="grid grid-cols-2 gap-3">
-          <div><label class="lbl">Price (€)</label>
-            ${numCtrl(pc.cost, { min: 0, max: 99999, step: 100, slider: false, oninput: `updateField(${pc.id},'cost',parseFloat(this.value)||0)` })}</div>
-          <div><label class="lbl">Replace (yrs)</label>
-            ${numCtrl(pc.replaceYears, { min: 1, max: 20, step: 1, slider: false, oninput: `updateField(${pc.id},'replaceYears',parseInt(this.value)||1)` })}</div>
+          ${pcField(pc, c, PC_FIELDS[2])}
+          ${pcField(pc, c, PC_FIELDS[3])}
         </div>
       </div>`;
     wrap.appendChild(div);
   });
   $('addBtn').style.display = pcs.length >= COLORS.length ? 'none' : '';
+}
+function pcField(pc, c, f) {
+  const parse = f.int ? 'parseInt' : 'parseFloat', fallback = f.int ? 1 : 0;
+  return `<div><label class="lbl">${f.label}</label>
+    ${numCtrl(pc[f.key], { min: f.min, max: f.max, step: f.step, slider: f.slider,
+      ...(f.slider ? { accent: c.hex } : {}),
+      oninput: `updateField(${pc.id},'${f.key}',${parse}(this.value)||${fallback})` })}</div>`;
 }
 
 // ─── Performance cards ──────────────────────────────────────────────────────
@@ -505,6 +521,28 @@ function renderChart() {
   });
 }
 
+// ─── Shareable config URL (UTF-8 safe base64) ───────────────────────────────
+function configToUrl() {
+  const payload = { s: settings(), p: pcs.map(({ id, ...p }) => p) };
+  const b64 = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+  return location.origin + location.pathname + '?c=' + b64;
+}
+function loadCfg() { // returns {settings, pcs} or null
+  const c = new URLSearchParams(location.search).get('c');
+  if (!c) return null;
+  try {
+    const { s, p } = JSON.parse(decodeURIComponent(escape(atob(c))));
+    return { settings: s, pcs: p };
+  } catch { return null; } // tampered/old param → fall back to defaults
+}
+async function copyLink(btn) {
+  const url = configToUrl();
+  try { await navigator.clipboard.writeText(url); }
+  catch { prompt('Copy this link:', url); } // non-secure context fallback
+  const t = btn.querySelector('.lbl-txt'), o = t.textContent;
+  t.textContent = 'Copied!'; setTimeout(() => t.textContent = o, 1500);
+}
+
 // ─── Actions ────────────────────────────────────────────────────────────────
 function addPC() {
   if (pcs.length >= COLORS.length) return;
@@ -532,7 +570,12 @@ function renderAll() { renderPCCards(); renderResults(); refreshSliders(); }
 function renderResults() { renderPerfCards(); renderInsights(); renderTCOTable(); renderSavingsTable(); renderChart(); }
 function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
-renderSettings();
+const loaded = loadCfg();
+const seedSettings = { ...Object.fromEntries(SETTINGS.map(s => [s.key, s.def])), ...(loaded?.settings || {}) };
+const sourcePcs = loaded?.pcs?.length ? loaded.pcs : DEFAULT_PCS;
+pcs = sourcePcs.map((p, i) => ({ id: i + 1, ...p }));
+nextId = pcs.length + 1;
+renderSettings(seedSettings);
 renderAll();
 </script>
 </body>
